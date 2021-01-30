@@ -113,11 +113,10 @@ app.post("/login", async (req,res) => {
     // send token in a HTTPOnly cookie
     res.cookie("authtoken", token, {
       httpOnly: true,
-      expires: new Date(Date.now() + 5000)
+      secure: true,
+      expiresIn: new Date(Date.now() + 5000)
     })
     .send()
-    
-
     
   } catch (err) {
     console.log(err);
@@ -130,9 +129,38 @@ app.post("/login", async (req,res) => {
 app.get("/logout", (req,res) => {
   res.cookie("authtoken", "", {
     httpOnly: true,
-    expires: new Date(0)
+      expires: new Date(0),
+      secure: true,
+      sameSite: "none",
   })
   .send()
 })
+
+app.get("/users", (req,res) => {
+  User.find({}, (err, data) =>  {
+    if (err) {
+      res.status(500).send(err.message)
+    }else {
+      res.send(data)
+    }
+  })
+})
+
+app.get("/loggedIn", (req, res) => {
+  try {
+    const authtoken = req.cookies.authtoken;
+    if (!authtoken) {
+      return res.json(false)
+    } else {
+      jwt.verify(authtoken, process.env.JWT_SECRET);
+
+    res.status(200).send(true);
+    }
+
+    
+  } catch (err) {
+    res.json(false);
+  }
+});
 
 module.exports = app
